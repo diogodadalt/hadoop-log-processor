@@ -1,6 +1,6 @@
 # hadoop-log-processor
 
-This is scripts are intended to enable the retrieval of information from map, shuffle and reduce tasks.
+These scripts are intended to enable the retrieval of information from map, shuffle and reduce tasks, regarding execution time.
 
 ### Requirements
 * Linux
