@@ -3,7 +3,7 @@
 import sys
 import json
 
-MAX = 800
+MAX = 2000
 START_TIME = 'startTime'
 FINISH_TIME = 'finishTime'
 SHUFFLE_FINISHED = 'shuffleFinished'
@@ -23,6 +23,10 @@ def getBaseTime(data):
 			baseTimeStamp = long(value[START_TIME])
 	return baseTimeStamp / 1000
 
+def removeTrailingZeros(list):
+	while list and list[-1] is 0:
+   		list.pop()
+
 def saveMapInfo(data, baseTime):
 	amountOfTasksMap, amountOfTasksShuffle, amountOfTasksReduce = [], [], []
 	for i in range(MAX):
@@ -34,22 +38,27 @@ def saveMapInfo(data, baseTime):
 			start = int(long(value[START_TIME]) / 1000 - baseTime)
 		elif value[TASK_TYPE] == 'r':
 			shuffleStart = int(long(value[START_TIME]) / 1000 - baseTime)
-			for i in range(shuffleStart, start):
+			for i in range(shuffleStart+1, start+1):
 				amountOfTasksShuffle[i] += 1
 			start = int(long(value[SHUFFLE_FINISHED]) / 1000 - baseTime)
 		end = int(long(value[FINISH_TIME]) / 1000 - baseTime)
-		for i in range(start, end+1):
+		for i in range(start+1, end+1):
 			if value[TASK_TYPE] == 'm':
 				amountOfTasksMap[i] += 1
 			elif value[TASK_TYPE] == 'r':
-				amountOfTasksReduce[i] += 1		
+				amountOfTasksReduce[i] += 1
+	removeTrailingZeros(amountOfTasksMap)
+	removeTrailingZeros(amountOfTasksShuffle)
+	removeTrailingZeros(amountOfTasksReduce)
 	mapsFile = open('maps.out', 'w')
 	shufflesFile = open('shuffles.out', 'w')
 	reducesFile = open('reduces.out', 'w')
-	for i in range(MAX):
-		mapsFile.write(str(i) + ' ' + str(amountOfTasksMap[i]) + '\n')
-		shufflesFile.write(str(i) + ' ' + str(amountOfTasksShuffle[i]) + '\n')
-		reducesFile.write(str(i) + ' ' + str(amountOfTasksReduce[i]) + '\n')
+	for i, item in enumerate(amountOfTasksMap):
+		mapsFile.write(str(i) + ' ' + str(item) + '\n')
+	for i, item in enumerate(amountOfTasksShuffle):
+		shufflesFile.write(str(i) + ' ' + str(item) + '\n')
+	for i, item in enumerate(amountOfTasksReduce):
+		reducesFile.write(str(i) + ' ' + str(item) + '\n')	
 	mapsFile.close()
 	shufflesFile.close()
 	reducesFile.close()
