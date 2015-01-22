@@ -100,7 +100,6 @@ taskRemovedParts = [
 	'INFO org.apache.hadoop.mapred.JobTracker: Removing task \'attempt_' + jobAndTaskRegex + '_(?P<attempt>(\d))\''
 ]
 
-#2015-01-10 13:36:06,217 INFO org.apache.hadoop.mapred.TaskTracker.clienttrace: src: 172.16.68.2:50060, dest: 172.16.68.2:51471, bytes: 1605246, op: MAPRED_SHUFFLE, cliID: attempt_201501100904_0001_m_000003_0, duration: 6512141
 shuffleTaskParts = [
 	dateGroupRegex,
 	' ',
@@ -180,9 +179,9 @@ def updateDictionary(dictionary, key, value):
 	dictionary[key] = value
 
 def extractFinishTime(dateStart, timeStart, duration):
-	timestampStart = long(totimestamp(getDatetime(dateStart, timeStart)))
-	timestampFinish = (timestampStart + (long(duration) / 1000))
-	return str(timestampFinish)
+	dtStart = getDatetime(dateStart, timeStart)
+	dtEnd = dtStart + timedelta(microseconds=long(duration))
+	return str(long(totimestamp(dtEnd)))
 
 def getInfoFromFile(file, jobId):
 	tasks = {}

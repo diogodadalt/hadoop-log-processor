@@ -3,7 +3,7 @@
 import sys
 import json
 
-MAX = 2000
+MAX = 3000
 DIVISOR = 1
 START_TIME = 'startTime'
 FINISH_TIME = 'finishTime'
@@ -45,14 +45,12 @@ def saveMapInfo(data, baseTime):
 		end = int(long(value[FINISH_TIME]) / DIVISOR - baseTime)
 		if value[TASK_TYPE] == 's':
 			end = int(long(value[FINISH_TIME]) / DIVISOR - baseTime)
-			print 'start: ' + str(start) + ', end: ' + str(end) + ', baseTime: ' + str(baseTime) + ', start: ' + value[START_TIME] + ', end: ' + value[FINISH_TIME]
 		for i in range(start+1, end+1):
 			if value[TASK_TYPE] == 'm':
 				amountOfTasksMap[i] += 1
 			elif value[TASK_TYPE] == 'r':
 				amountOfTasksReduce[i] += 1
-			elif value[TASK_TYPE] == 's':
-				print 'index: ' + str(i)
+			elif value[TASK_TYPE] == 's':				
 				amountOfTasksShuffle[i] += 1 
 	removeTrailingZeros(amountOfTasksMap)
 	removeTrailingZeros(amountOfTasksShuffle)
