@@ -4,6 +4,7 @@ import sys
 import json
 
 MAX = 2000
+DIVISOR = 1
 START_TIME = 'startTime'
 FINISH_TIME = 'finishTime'
 SHUFFLE_FINISHED = 'shuffleFinished'
@@ -21,11 +22,17 @@ def getBaseTime(data):
 	for key, value in data.iteritems():
 		if baseTimeStamp == -1 or baseTimeStamp > long(value[START_TIME]):
 			baseTimeStamp = long(value[START_TIME])
-	return baseTimeStamp / 1000
+	return baseTimeStamp / DIVISOR
 
 def removeTrailingZeros(list):
 	while list and list[-1] is 0:
    		list.pop()
+
+def saveInFile(filename, list):
+	file = open(filename, 'w')
+	for i, item in enumerate(list):
+		file.write(str(i) + ' ' + str(item) + '\n')
+	file.close()
 
 def saveMapInfo(data, baseTime):
 	amountOfTasksMap, amountOfTasksShuffle, amountOfTasksReduce = [], [], []
@@ -34,37 +41,28 @@ def saveMapInfo(data, baseTime):
 		amountOfTasksShuffle.append(0)
 		amountOfTasksReduce.append(0)
 	for key, value in data.iteritems():
-		if value[TASK_TYPE] == 'm':
-			start = int(long(value[START_TIME]) / 1000 - baseTime)
-		elif value[TASK_TYPE] == 'r':
-			shuffleStart = int(long(value[START_TIME]) / 1000 - baseTime)
-			for i in range(shuffleStart+1, start+1):
-				amountOfTasksShuffle[i] += 1
-			start = int(long(value[SHUFFLE_FINISHED]) / 1000 - baseTime)
-		end = int(long(value[FINISH_TIME]) / 1000 - baseTime)
+		start = int(long(value[START_TIME]) / DIVISOR - baseTime)
+		end = int(long(value[FINISH_TIME]) / DIVISOR - baseTime)
+		if value[TASK_TYPE] == 's':
+			end = int(long(value[FINISH_TIME]) / DIVISOR - baseTime)
+			print 'start: ' + str(start) + ', end: ' + str(end) + ', baseTime: ' + str(baseTime) + ', start: ' + value[START_TIME] + ', end: ' + value[FINISH_TIME]
 		for i in range(start+1, end+1):
 			if value[TASK_TYPE] == 'm':
 				amountOfTasksMap[i] += 1
 			elif value[TASK_TYPE] == 'r':
 				amountOfTasksReduce[i] += 1
+			elif value[TASK_TYPE] == 's':
+				print 'index: ' + str(i)
+				amountOfTasksShuffle[i] += 1 
 	removeTrailingZeros(amountOfTasksMap)
 	removeTrailingZeros(amountOfTasksShuffle)
 	removeTrailingZeros(amountOfTasksReduce)
 	amountOfTasksMap.append(0)
 	amountOfTasksShuffle.append(0)
 	amountOfTasksReduce.append(0)
-	mapsFile = open('maps.out', 'w')
-	shufflesFile = open('shuffles.out', 'w')
-	reducesFile = open('reduces.out', 'w')
-	for i, item in enumerate(amountOfTasksMap):
-		mapsFile.write(str(i) + ' ' + str(item) + '\n')
-	for i, item in enumerate(amountOfTasksShuffle):
-		shufflesFile.write(str(i) + ' ' + str(item) + '\n')
-	for i, item in enumerate(amountOfTasksReduce):
-		reducesFile.write(str(i) + ' ' + str(item) + '\n')	
-	mapsFile.close()
-	shufflesFile.close()
-	reducesFile.close()
+	saveInFile('maps.out', amountOfTasksMap)
+	saveInFile('shuffles.out', amountOfTasksShuffle)
+	saveInFile('reduces.out', amountOfTasksReduce)
 
 jobId = sys.argv[1]
 data = readJsonData(jobId + '.json')
