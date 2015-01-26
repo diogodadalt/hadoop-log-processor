@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 import collections
 import glob
 
+START_TIME = 'startTime'
+FINISH_TIME = 'finishTime'
+TASK_TYPE = 'taskType'
 YEAR = 'year'
 MONTH = 'month'
 DAY = 'day'
@@ -32,17 +35,21 @@ dateGroupRegex = '(?P<' + DATE + '>' + dateRegex + ')'
 timeGroupRegex = '(?P<' + TIME + '>' + timeRegex + ')'
 numGroupRegex = '(?P<num>' + numRegex + ')'
 jobIdGroupRegex = '(?P<jobId>' + jobIdRegex + ')'
-jobAndTaskRegex = jobIdGroupRegex + '_(?P<taskType>' + taskTypeRegex + ')_(?P<taskId>' + taskIdRegex + ')'
+jobAndTaskRegex = (jobIdGroupRegex + '_(?P<taskType>' + taskTypeRegex + 
+	')_(?P<taskId>' + taskIdRegex + ')')
 jobAndTaskRegex2 = jobIdRegex + '_' + taskTypeRegex + '_' + taskIdRegex
-datePartsGroupRegex = '(?P<' + YEAR + '>' + yearRegex + ')-(?P<' + MONTH + '>' + monthRegex + ')-(?P<' + DAY + '>' + dayRegex + ')'
-timePartsGroupRegex = '(?P<' + HOUR + '>' + hourRegex + '):(?P<' + MINUTE + '>' + minuteRegex + '):(?P<' + SECOND + '>' + secondRegex + ')'
+datePartsGroupRegex = ('(?P<' + YEAR + '>' + yearRegex + ')-(?P<' + MONTH + 
+	'>' + monthRegex + ')-(?P<' + DAY + '>' + dayRegex + ')')
+timePartsGroupRegex = ('(?P<' + HOUR + '>' + hourRegex + '):(?P<' + MINUTE + 
+	'>' + minuteRegex + '):(?P<' + SECOND + '>' + secondRegex + ')')
 sourceGroupRegex = 'src: (?P<srcip>([\d.]+)):(?P<srcport>(\d+))'
 destinationGroupRegex = 'dest: (?P<destip>([\d.]+)):(?P<destport>(\d+))'
 sizeGroupRegex = 'bytes: (?P<size>(\d+))'
 durationGroupRegex = 'duration: (?P<duration>(\d+))'
 mapHeaderRegex = 'MapAttempt TASK_TYPE="MAP"'
 taskIdGroupRegex = 'TASKID="task_' + jobAndTaskRegex2 + '"'
-attemptGroupRegex = 'TASK_ATTEMPT_ID="attempt_' + jobAndTaskRegex + '_(?P<attempt>(\d))"'
+attemptGroupRegex = ('TASK_ATTEMPT_ID="attempt_' + jobAndTaskRegex + 
+	'_(?P<attempt>(\d))"')
 startTimeGroupRegex = 'START_TIME="(?P<startTime>(\d+))"'
 taskStatusGroupRegex = 'TASK_STATUS="SUCCESS"'
 finishTimeGroupRegex = 'FINISH_TIME="(?P<finishTime>(\d+))"'
@@ -59,7 +66,8 @@ mapAddedParts = [
 	' ',
 	'INFO org.apache.hadoop.mapred.JobTracker: Adding task \(MAP\)',
 	' ',
-	'\'attempt_' + jobAndTaskRegex +'_(?P<attempt>(\d))\' to tip task_' + jobAndTaskRegex2,
+	('\'attempt_' + jobAndTaskRegex +'_(?P<attempt>(\d))\' to tip task_' + 
+		jobAndTaskRegex2),
 	', ',
 	'for tracker \'(?P<tracker>.*)\''
 ]
@@ -73,7 +81,8 @@ reduceAddedParts = [
 	' ',
 	'INFO org.apache.hadoop.mapred.JobTracker: Adding task \(REDUCE\)',
 	' ',
-	'\'attempt_' + jobAndTaskRegex +'_(?P<attempt>(\d))\' to tip task_' + jobAndTaskRegex2,
+	('\'attempt_' + jobAndTaskRegex +'_(?P<attempt>(\d))\' to tip task_' + 
+		jobAndTaskRegex2),
 	', ',
 	'for tracker \'(?P<tracker>.*)\''
 ]
@@ -87,7 +96,9 @@ taskCompletedParts = [
 	' ',
 	'INFO org.apache.hadoop.mapred.JobInProgress:',
 	' ',
-	'Task \'attempt_' + jobAndTaskRegex + '_(?P<attempt>(\d))\' has completed task_' + jobAndTaskRegex2 + ' successfully.'
+	('Task \'attempt_' + jobAndTaskRegex + 
+		'_(?P<attempt>(\d))\' has completed task_' + jobAndTaskRegex2 + 
+		' successfully.')
 ]
 
 taskRemovedParts = [
@@ -97,7 +108,8 @@ taskRemovedParts = [
 	',',
 	numGroupRegex,
 	' ',
-	'INFO org.apache.hadoop.mapred.JobTracker: Removing task \'attempt_' + jobAndTaskRegex + '_(?P<attempt>(\d))\''
+	('INFO org.apache.hadoop.mapred.JobTracker: Removing task \'attempt_' + 
+		jobAndTaskRegex + '_(?P<attempt>(\d))\'')
 ]
 
 shuffleTaskParts = [
@@ -115,7 +127,8 @@ shuffleTaskParts = [
 	', ',
 	sizeGroupRegex,
 	', ',
-	'op: MAPRED_SHUFFLE, cliID: attempt_' + jobAndTaskRegex + '_(?P<attempt>(\d))',
+	('op: MAPRED_SHUFFLE, cliID: attempt_' + jobAndTaskRegex + 
+		'_(?P<attempt>(\d))'),
 	', ',
 	durationGroupRegex
 ]
@@ -127,7 +140,8 @@ jobCompletedParts = [
 	',',
 	numGroupRegex,
 	' ',
-	'INFO org.apache.hadoop.mapred.JobInProgress: Job job_' + jobIdGroupRegex + ' has completed successfully.'
+	('INFO org.apache.hadoop.mapred.JobInProgress: Job job_' + 
+		jobIdGroupRegex + ' has completed successfully.')
 ]
 
 mapAddedPattern = re.compile(''.join(mapAddedParts))
@@ -147,7 +161,8 @@ def totimestamp(dt, epoch=datetime(1970,1,1)):
 def getDatetime(date, time):
 	date = datePartsPattern.match(date).groupdict()
 	time = timePartsPattern.match(time).groupdict()
-	return datetime(int(date[YEAR]), int(date[MONTH]), int(date[DAY]), int(time[HOUR]), int(time[MINUTE]), int(time[SECOND]))
+	return datetime(int(date[YEAR]), int(date[MONTH]), int(date[DAY]), 
+		int(time[HOUR]), int(time[MINUTE]), int(time[SECOND]))
 
 def formatTimeStamp(timestamp):
 	return str(long(timestamp))
@@ -183,6 +198,15 @@ def extractFinishTime(dateStart, timeStart, duration):
 	dtEnd = dtStart + timedelta(microseconds=long(duration))
 	return str(long(totimestamp(dtEnd)))
 
+def getMapFinishTime(data):
+	finishTime = 0;
+	for key, value in data.iteritems():
+		if (value[TASK_TYPE] == 'm' and 
+			long(value[FINISH_TIME]) > finishTime):
+			finishTime = long(value[FINISH_TIME])
+	return finishTime
+
+
 def getInfoFromFile(file, jobId):
 	tasks = {}
 	with open(file) as openfileobject:
@@ -191,30 +215,47 @@ def getInfoFromFile(file, jobId):
 				match(line, mapAddedPattern, 
 					lambda taskInfo: [
 						updateDictionaryIfNone(tasks, key(taskInfo), taskInfo),
-						updateDictionaryIfNone(taskInfo, 'startTime', generateTimeStamp(taskInfo[DATE], taskInfo[TIME]))
+						updateDictionaryIfNone(taskInfo, 'startTime', 
+							generateTimeStamp(taskInfo[DATE], taskInfo[TIME]))
 					]
 				)
 				match(line, reduceAddedPattern, 
 					lambda taskInfo: [
 						updateDictionaryIfNone(tasks, key(taskInfo), taskInfo),
-						updateDictionaryIfNone(taskInfo, 'startTime', generateTimeStamp(taskInfo[DATE], taskInfo[TIME]))
+						updateDictionaryIfNone(taskInfo, 'startTime', 
+							generateTimeStamp(taskInfo[DATE], taskInfo[TIME]))
 					]
 				)
 				match(line, taskCompletedPattern, 
 					lambda taskInfo:
 						performIfHasKey(key(taskInfo), tasks, lambda: 
-							updateDictionaryIfNone(tasks[key(taskInfo)], 'finishTime', generateTimeStamp(taskInfo[DATE], taskInfo[TIME]))
+							updateDictionaryIfNone(tasks[key(taskInfo)], 
+								'finishTime', generateTimeStamp(taskInfo[DATE], 
+									taskInfo[TIME]))
 						)							
 				)
 				match(line, shuffleTaskPattern, 
 					lambda taskInfo: [
-						updateDictionaryIfNone(tasks, key(taskInfo, 's'), taskInfo),
-						updateDictionaryIfNone(taskInfo, 'startTime', generateTimeStamp(taskInfo[DATE], taskInfo[TIME])),
-						updateDictionaryIfNone(taskInfo, 'finishTime', extractFinishTime(taskInfo[DATE], taskInfo[TIME], taskInfo[DURATION])),
-						updateDictionary(tasks[key(taskInfo, 's')], 'taskType', 's')
+						updateDictionaryIfNone(tasks, key(taskInfo, 's'), 
+							taskInfo),
+						updateDictionaryIfNone(taskInfo, 'startTime', 
+							generateTimeStamp(taskInfo[DATE], taskInfo[TIME])),
+						updateDictionaryIfNone(taskInfo, 'finishTime', 
+							extractFinishTime(taskInfo[DATE], taskInfo[TIME], 
+								taskInfo[DURATION])),
+						updateDictionary(tasks[key(taskInfo, 's')], 
+							'taskType', 's')
 					]
 				)
 	return tasks
+
+def fixReducesStartTime(data):
+	mapFinishTime = getMapFinishTime(data);
+	for key, value in data.iteritems():
+		if (value[TASK_TYPE] == 'r' and 
+			long(value[START_TIME]) < mapFinishTime):
+			value[START_TIME] = str(mapFinishTime)
+	return data
 
 def saveInfo(file, data):
 	with open(file, 'w') as outfile:
@@ -225,9 +266,8 @@ taskTracker = sys.argv[2]
 jobId = sys.argv[3]
 
 
-mapAndReduceData = getInfoFromFile(jobTracker, jobId)
+mapAndReduceData = fixReducesStartTime(getInfoFromFile(jobTracker, jobId))
 shuffleData = getInfoFromFile(taskTracker, jobId)
-#mapAndReduceSortedData = collections.OrderedDict(sorted(mapAndReduceData.items()))
-#shuffleSortedData = collections.OrderedDict(sorted(shuffleData.items()))
-data = collections.OrderedDict(sorted(mapAndReduceData.items() + shuffleData.items()))
+data = collections.OrderedDict(sorted(mapAndReduceData.items() + 
+	shuffleData.items()))
 saveInfo(jobId + '.json', data)
