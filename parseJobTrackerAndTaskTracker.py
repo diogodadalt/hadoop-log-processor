@@ -190,12 +190,20 @@ def updateDictionaryIfNone(dictionary, key, value):
 	if (key not in dictionary):
 		dictionary[key] = value
 
+def updateDictionaryIfSmaller(dictionary, key, value):
+	if (key not in dictionary or long(dictionary[key]) > long(value)):
+		dictionary[key] = value
+
+def updateDictionaryIfBigger(dictionary, key, value):
+	if (key not in dictionary or long(dictionary[key]) < long(value)):
+		dictionary[key] = value
+
 def updateDictionary(dictionary, key, value):
 	dictionary[key] = value
 
 def extractFinishTime(dateStart, timeStart, duration):
 	dtStart = getDatetime(dateStart, timeStart)
-	dtEnd = dtStart + timedelta(microseconds=long(duration))
+	dtEnd = dtStart +  timedelta(microseconds=long(float(duration)/1000.0))
 	return str(long(totimestamp(dtEnd)))
 
 def getMapFinishTime(data):
@@ -215,14 +223,14 @@ def getInfoFromFile(file, jobId):
 				match(line, mapAddedPattern, 
 					lambda taskInfo: [
 						updateDictionaryIfNone(tasks, key(taskInfo), taskInfo),
-						updateDictionaryIfNone(taskInfo, 'startTime', 
+						updateDictionaryIfNone(taskInfo, START_TIME, 
 							generateTimeStamp(taskInfo[DATE], taskInfo[TIME]))
 					]
 				)
 				match(line, reduceAddedPattern, 
 					lambda taskInfo: [
 						updateDictionaryIfNone(tasks, key(taskInfo), taskInfo),
-						updateDictionaryIfNone(taskInfo, 'startTime', 
+						updateDictionaryIfNone(taskInfo, START_TIME, 
 							generateTimeStamp(taskInfo[DATE], taskInfo[TIME]))
 					]
 				)
@@ -230,7 +238,7 @@ def getInfoFromFile(file, jobId):
 					lambda taskInfo:
 						performIfHasKey(key(taskInfo), tasks, lambda: 
 							updateDictionaryIfNone(tasks[key(taskInfo)], 
-								'finishTime', generateTimeStamp(taskInfo[DATE], 
+								FINISH_TIME, generateTimeStamp(taskInfo[DATE], 
 									taskInfo[TIME]))
 						)							
 				)
@@ -238,13 +246,13 @@ def getInfoFromFile(file, jobId):
 					lambda taskInfo: [
 						updateDictionaryIfNone(tasks, key(taskInfo, 's'), 
 							taskInfo),
-						updateDictionaryIfNone(taskInfo, 'startTime', 
-							generateTimeStamp(taskInfo[DATE], taskInfo[TIME])),
-						updateDictionaryIfNone(taskInfo, 'finishTime', 
-							extractFinishTime(taskInfo[DATE], taskInfo[TIME], 
-								taskInfo[DURATION])),
+						updateDictionaryIfSmaller(tasks[key(taskInfo, 's')], 
+							START_TIME, generateTimeStamp(taskInfo[DATE], taskInfo[TIME])),
+						updateDictionaryIfBigger(tasks[key(taskInfo, 's')], 
+							FINISH_TIME, extractFinishTime(taskInfo[DATE], 
+								taskInfo[TIME], taskInfo[DURATION])),
 						updateDictionary(tasks[key(taskInfo, 's')], 
-							'taskType', 's')
+							TASK_TYPE, 's')
 					]
 				)
 	return tasks
