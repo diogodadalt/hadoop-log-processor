@@ -214,13 +214,12 @@ def extractFinishTime(dateStart, timeStart, duration):
   return str(long(totimestamp(dtEnd)))
 
 def getMapFinishTime(data):
-  finishTime = 0;
+  finishTime = 0
   for key, value in data.iteritems():
     if (value[TASK_TYPE] == 'm' and 
       long(value[FINISH_TIME]) > finishTime):
       finishTime = long(value[FINISH_TIME])
   return finishTime
-
 
 def getInfoFromFile(file, jobId):
   tasks = {}
@@ -286,6 +285,14 @@ def fixReducesStartTime(data):
       value[START_TIME] = str(mapFinishTime)
   return data
 
+def fixShuffleFinishTime(data):
+  mapFinishTime = getMapFinishTime(data);
+  for key, value in data.iteritems():
+    if (value[TASK_TYPE] == 's' and 
+      long(value[FINISH_TIME]) > mapFinishTime):
+      value[FINISH_TIME] = str(mapFinishTime)
+  return data  
+
 def saveInfo(file, data):
   with open(file, 'w') as outfile:
     json.dump(data, outfile)
@@ -298,4 +305,5 @@ mapAndReduceData = fixReducesStartTime(getInfoFromFile(jobTracker, jobId))
 shuffleData = getShuffleInfoFromFile(taskTracker, jobId)
 data = collections.OrderedDict(sorted(mapAndReduceData.items() + 
   shuffleData.items()))
+data = fixShuffleFinishTime(data)
 saveInfo(jobId + '.json', data)
